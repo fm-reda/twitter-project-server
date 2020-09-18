@@ -17,9 +17,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('login', 'PassportController@login');
 Route::post('register', 'PassportController@register');
- 
+
 Route::middleware('auth:api')->group(function () {
     Route::get('user', 'PassportController@details');
- 
+
     Route::resource('products', 'ProductController');
 });
+
+
+Route::post('/twitter','TController@create');
+Route::get('/id','TController@get');
+Route::delete('/delete/{id}','TController@delete');
