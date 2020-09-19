@@ -22,9 +22,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('user', 'PassportController@details');
 
     Route::resource('products', 'ProductController');
+    Route::post('/add-tweet', 'TController@create');
+    Route::get('/get-favoris', 'TController@get');
+    Route::delete('/delete/{id}', 'TController@delete');
 });
-
-
-Route::post('/twitter','TController@create');
-Route::get('/id','TController@get');
-Route::delete('/delete/{id}','TController@delete');

@@ -1,10 +1,13 @@
 <?php
- 
+
 namespace App\Http\Controllers;
- 
+
 use App\User;
 use Illuminate\Http\Request;
- 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+
+
 class PassportController extends Controller
 {
     /**
@@ -15,23 +18,41 @@ class PassportController extends Controller
      */
     public function register(Request $request)
     {
-        $this->validate($request, [
-            'name' => 'required|min:3',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
+        $userEmail = User::where('email', $request->get('email'))->first();
+
+        if ($userEmail) {
+            return response()->json(['Email already exist' => $userEmail], 208);
+        }
+        // dd($request->all());
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'email' => 'required|email',
+            'password' => 'required',
+            // 'c_password' => 'required|same:password',
+
         ]);
- 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password)
-        ]);
- 
-        $token = $user->createToken('TutsForWeb')->accessToken;
- 
-        return response()->json(['token' => $token], 200);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 401);
+        }
+
+
+        $input = $request->all();
+
+        $input['password'] = bcrypt($input['password']);
+        $user = User::create($input);
+    
+        $user->save();
+        $success['token'] =  $user->createToken('MyApp')->accessToken;
+  
+        $success['name'] =  $user->name;
+        $success['email'] =  $user->email;
+
+
+        return response()->json(['success' => $user], 201);
+
+       
     }
- 
+
     /**
      * Handles Login Request
      *
@@ -40,19 +61,24 @@ class PassportController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = [
-            'email' => $request->email,
-            'password' => $request->password
-        ];
- 
-        if (auth()->attempt($credentials)) {
-            $token = auth()->user()->createToken('TutsForWeb')->accessToken;
-            return response()->json(['token' => $token], 200);
+
+     
+        if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) {
+     
+            $user = Auth::user();
+            // dd($user);
+            $success['token'] =  $user->createToken('MyApp')->accessToken;
+            $response = [
+                'user' => Auth::User(),
+                'access_token' => $success['token']
+            ];
+            return response()->json($response,200);
         } else {
-            return response()->json(['error' => 'UnAuthorised'], 401);
+            return response()->json(['status' =>401, 'error' => 'Invalid credentials'], $this->unauthorisedStatus);
         }
+     
     }
- 
+
     /**
      * Returns Authenticated User Details
      *
